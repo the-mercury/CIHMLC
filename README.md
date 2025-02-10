@@ -69,35 +69,31 @@ For a detailed walkthrough of the inference process, refer to the [API](#api) se
 
 ## Project Structure
     .
-    ├── data/                       # Directory for CheXpert dataset and label files
-    │   ├── CheXpert/               # Patient images
-    │   ├── train_labels.csv        # Training labels
-    │   └── val_labels.csv          # Validation labels
+    ├── data/                                               # Directory for CheXpert dataset and label files
+    │   ├── CheXpert/                                       # Patient images
+    │   ├── train_labels.csv                                # Training labels
+    │   └── val_labels.csv                                  # Validation labels
     │
-    ├── docker/                     # Docker configuration files
+    ├── docker/                                             # Docker configuration files
     │   ├── Dockerfile
     │   └── docker-compose.yml
     │
-    ├── fresh_models/               # Trained model checkpoints
+    ├── fresh_models/                                       # Trained model checkpoints
     │   └── model_name.keras
     │
-    ├── logs/                       # Logs, heatmaps, and training metrics
-    │   ├── heatmaps/               # CAM visualizations
-    │   └── tensorboard/            # TensorBoard logs for visualization
+    ├── logs/                                               # Logs, heatmaps, and training metrics
+    │   ├── heatmaps/                                       # Generated CAM visualizations
+    │   └── tensorboard/                                    # TensorBoard logs for visualization
     │
-    ├── src/                        # Source code
-    │   ├── models/                 # Model architecture and training
-    │   │   ├── x_ray_inference.py
-    │   │   └── x_ray_trainer.py
-    │   ├── helpers/                # Utility scripts for data and evaluation
-    │   │   ├── cam.py
-    │   │   ├── data_utils.py
-    │   │   └── hierarchical_binary_cross_entropy.py
-    │   ├── data/                   # Data loaders
+    ├── src/                                                # Source code
+    │   ├── helpers/                                        # Utility scripts
+    │   │   └── cam.py                                      # Visualization
+    │   ├── data/                                           # Data loaders
     │   │   └── chexpert_data_loader.py
-    │   ├── config.py               # Configuration file
-    │   ├── cxr_inference_app.py    # FastAPI application for model inference
-    │   └── train.py                # Script to train the model
+    │   ├── config.py                                       # Configuration file
+    │   ├── cxr_inference_app.py                            # FastAPI application for model inference
+    │   ├── hierarchical_binary_cross_entropy.py            # Custom loss function
+    │   └── train.py                                        # Script to train the model
     │
     ├── .gitignore
     ├── LICENSE
