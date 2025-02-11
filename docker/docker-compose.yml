@@ -1,0 +1,14 @@
+services:
+  cihmlc_cxr_app:
+    build:
+      context: ..
+      dockerfile: ./docker/Dockerfile
+    ports:
+      - "8000:8000"
+    volumes:
+      - ../src:/CIHMLC/src
+      - ../logs:/CIHMLC/logs
+#    environment:
+#      - DATASET=CheXpert
+#      - IS_TRAINING=False
+    command: uvicorn src.cxr_inference_app:app --host 0.0.0.0 --port 8000 --workers 1 --log-level debug
