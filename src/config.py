@@ -68,7 +68,8 @@ class Config:
     ONLY_PA: bool = os.getenv('ONLY_PA', 'False').lower() == 'true'
     ONLY_M: bool = os.getenv('ONLY_M', 'False').lower() == 'true'
     ONLY_F: bool = os.getenv('ONLY_F', 'False').lower() == 'true'
-    NUM_CLASSES: int = int(os.getenv('NUM_CLASSES', len(PATHOLOGY_LABELS)))
+    TOTAL_NUM_LABELS: int = (len(PATHOLOGY_LABELS) + len(HIERARCHICAL_LABELS)) if IS_HIERARCHICAL_TRAINING else len(PATHOLOGY_LABELS)
+    NUM_CLASSES: int = int(os.getenv('NUM_CLASSES', TOTAL_NUM_LABELS))
 
     # Hyperparameters and other settings
     DO_AUGMENT: bool = os.getenv('DO_AUGMENT', 'False').lower() == 'true'
@@ -92,41 +93,46 @@ class Config:
 
     if IS_TRAINING:
         DEVICE = os.getenv('DEVICE', 'GPU')
-    BASE_MODEL: Dict[str, Any] = {
-        'densenet121': DenseNet121(weights=INIT_WEIGHTS,
-                                   include_top=False,
-                                   input_tensor=INPUT_TENSOR,
-                                   input_shape=INPUT_SHAPE),
-
-        # 'mobilenetv2': MobileNetV2(weights=INIT_WEIGHTS,
-        #                            include_top=False,
-        #                            input_tensor=INPUT_TENSOR,
-        #                            input_shape=INPUT_SHAPE),
-        #
-        # 'resnet50': ResNet50(weights=INIT_WEIGHTS,
-        #                      include_top=False,
-        #                      input_tensor=INPUT_TENSOR,
-        #                      input_shape=INPUT_SHAPE),
-        #
-        # 'vgg19': VGG19(weights=INIT_WEIGHTS,
-        #                include_top=False,
-        #                input_tensor=INPUT_TENSOR,
-        #                input_shape=INPUT_SHAPE),
-        #
-        # 'efficientnetb0': EfficientNetB0(weights=INIT_WEIGHTS,
-        #                                  include_top=False,
-        #                                  input_tensor=INPUT_TENSOR,
-        #                                  input_shape=INPUT_SHAPE)
-    }
+    BASE_MODEL = DenseNet121(weights=INIT_WEIGHTS,
+                             include_top=False,
+                             input_tensor=INPUT_TENSOR,
+                             input_shape=INPUT_SHAPE)
+    # BASE_MODEL: Dict[str, Any] = {
+    #     'densenet121': DenseNet121(weights=INIT_WEIGHTS,
+    #                                include_top=False,
+    #                                input_tensor=INPUT_TENSOR,
+    #                                input_shape=INPUT_SHAPE),
+    #
+    #     'mobilenetv2': MobileNetV2(weights=INIT_WEIGHTS,
+    #                                include_top=False,
+    #                                input_tensor=INPUT_TENSOR,
+    #                                input_shape=INPUT_SHAPE),
+    #
+    #     'resnet50': ResNet50(weights=INIT_WEIGHTS,
+    #                          include_top=False,
+    #                          input_tensor=INPUT_TENSOR,
+    #                          input_shape=INPUT_SHAPE),
+    #
+    #     'vgg19': VGG19(weights=INIT_WEIGHTS,
+    #                    include_top=False,
+    #                    input_tensor=INPUT_TENSOR,
+    #                    input_shape=INPUT_SHAPE),
+    #
+    #     'efficientnetb0': EfficientNetB0(weights=INIT_WEIGHTS,
+    #                                      include_top=False,
+    #                                      input_tensor=INPUT_TENSOR,
+    #                                  input_shape=INPUT_SHAPE)
+    # }
 
     IS_BASE_MODEL_PREPROCESS = os.getenv('BASE_MODEL_PREPROCESS', 'False').lower() == 'true'
-    BASE_MODEL_PREPROCESS_UNIT: Dict[str, Any] = {
-        'densenet121': densenet_preprocess_input,
-        # 'mobilenetv2': mobilenet_preprocess_input,
-        # 'resnet50': resnet50_preprocess_input,
-        # 'vgg19': vgg19_preprocess_input,
-        # 'efficientnetb0': efficientnet_preprocess_input
-    }
+    BASE_MODEL_PREPROCESS_UNIT = densenet_preprocess_input
+    # BASE_MODEL_PREPROCESS_UNIT: Dict[str, Any] = {
+    # 'densenet121': densenet_preprocess_input,
+    # 'mobilenetv2': mobilenet_preprocess_input,
+    # 'resnet50': resnet50_preprocess_input,
+    # 'vgg19': vgg19_preprocess_input,
+    # 'efficientnetb0': efficientnet_preprocess_input
+    # }
 
     # Data directory and CSV path
     DATA_DIR: str = os.path.abspath(os.getenv('DATA_DIR', 'data'))
