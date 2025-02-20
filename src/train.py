@@ -107,7 +107,6 @@ def evaluate(data_loader: Optional[CheXpertDataLoader] = None,
 
 
 if __name__ == '__main__':
-    hierarchy_num = 4
     use_computed_penalties = True
 
     penalty_scale = 0.5 if use_computed_penalties else None
