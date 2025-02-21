@@ -11,3 +11,4 @@ fastapi==0.110.0
 pydantic==2.7.3
 urllib3==1.26.19
 h5py==3.10.0
+tqdm==4.67.1
