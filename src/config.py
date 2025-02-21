@@ -42,6 +42,7 @@ class Config:
     HIGH_LEVEL_LABELS = sorted(['Abnormal', 'Fluid Accumulation', 'Missing Lung Tissue', 'Other', 'Cardiac', 'Opacity'])
     HIERARCHICAL_LABELS = os.getenv('HIERARCHICAL_LABELS', HIGH_LEVEL_LABELS)
     HIERARCHY_PENALTY = os.getenv('HIERARCHY_PENALTY', 0.5)
+    USE_COMPUTED_PENALTIES = os.getenv('USE_COMPUTED_PENALTIES', True)
 
     # Log directory (absolute path)
     LOG_DIR: str = os.path.abspath(os.getenv('LOG_DIR', './logs'))

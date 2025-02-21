@@ -28,7 +28,7 @@ def train(tr_hierarchy_penalty: Optional[float] = None,
     Returns:
     Optional[keras.Model]: The trained Keras model, or None if an error occurs.
     """
-    seed = 19910824
+    seed = 2408
     random.seed(seed)
     np.random.seed(seed)
     tf.random.set_seed(seed)
@@ -107,26 +107,20 @@ def evaluate(data_loader: Optional[CheXpertDataLoader] = None,
 
 
 if __name__ == '__main__':
-    use_computed_penalties = True
 
-    penalty_scale = 0.5 if use_computed_penalties else None
-    penalty = None if use_computed_penalties else 0.3
-
+    penalty_scale, penalty = (1.0, None) if Config.USE_COMPUTED_PENALTIES else (None, 0.5)
     penalty_type = f'fixed_{penalty}' if penalty is not None else 'DataDriven'
 
     Config.START_TIME = time.strftime('%a_%d_%b_%Y_%H%M')  # overriding the config start time
     logger = LoggerConfig().get_logger('TRAIN', Config.TRAIN_LOG_DIR)
-    logger.info(
-        f'\n\n>>> {str.upper("training")} -- {str.upper("hierarchical")} -- {str.upper("penalty: ")}{penalty_type} -- {str.upper("scale factor: ")}{penalty_scale} <<<\n')
+    logger.info(f'\n\n>>> {str.upper("training")} -- {str.upper("hierarchical")} -- {str.upper("penalty: ")}{penalty_type} -- {str.upper("scale factor: ")}{penalty_scale} <<<\n')
 
     start_time = time.time()
     new_model, new_data_loader = train(tr_hierarchy_penalty=penalty,
                                        tr_penalty_scale=penalty_scale,
-                                       tr_use_computed_penalties=use_computed_penalties)
+                                       tr_use_computed_penalties=Config.USE_COMPUTED_PENALTIES)
     elapsed_time = time.time() - start_time
     logger.info(f'Training completed in {elapsed_time:.2f}s')
-    logger.info(
-        f'\n\n>>> {str.upper("evaluating")} -- {str.upper("hierarchical")} -- {str.upper("penalty: ")}{penalty_type} -- {str.upper("scale factor: ")}{penalty_scale} <<<\n')
 
-    evaluate(data_loader=new_data_loader,
-             eval_model=new_model)
+    logger.info(f'\n\n>>> {str.upper("evaluating")} -- {str.upper("hierarchical")} -- {str.upper("penalty: ")}{penalty_type} -- {str.upper("scale factor: ")}{penalty_scale} <<<\n')
+    evaluate(data_loader=new_data_loader, eval_model=new_model)
