@@ -1,0 +1,10 @@
+{
+  "Abnormal": ["Opacity", "Cardiac", "Other"],
+  "Opacity": ["Lung Opacity", "Lung Lesion", "Fluid Accumulation", "Missing Lung Tissue"],
+  "Fluid Accumulation": ["Edema", "Consolidation", "Pleural Effusion", "Pneumonia"],
+  "Missing Lung Tissue": ["Atelectasis", "Pneumothorax", "Pleural Other"],
+  "Cardiac": ["Enlarged Cardiomediastinum", "Cardiomegaly"],
+  "Other": ["Fracture", "Support Devices"],
+  "Enlarged Cardiomediastinum": ["Cardiomegaly"],
+  "Consolidation": ["Pneumonia"]
+}
