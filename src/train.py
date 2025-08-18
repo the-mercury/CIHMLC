@@ -156,8 +156,12 @@ def evaluate(data_loader: Optional[CheXpertDataLoader] = None,
                 # from_logits=False,  # set True if your model outputs logits
                 verbose=1
             )
+            np.save(y_score, 'default_model_files/scores/test_val_scores/y_pred_val_mean.npy')
+            np.save(y_score_std, 'default_model_files/scores/test_val_scores/y_pred_val_std.npy')
         else:
             y_score = eval_model.predict(val_gen)
+            np.save(y_score, 'default_model_files/scores/test_val_scores/y_pred_val.npy')
+        np.save(y_true, 'default_model_files/scores/y_true_val.npy')
     else:
         _, _, test_df = data_loader.get_data_frames()
         _, _, test_gen = data_loader.get_data_generators()
@@ -170,8 +174,12 @@ def evaluate(data_loader: Optional[CheXpertDataLoader] = None,
                 # from_logits=False,  # set True if your model outputs logits
                 verbose=1
             )
+            np.save(y_score, 'default_model_files/scores/test_val_scores/y_pred_test_mean.npy')
+            np.save(y_score_std, 'default_model_files/scores/test_val_scores/y_pred_test_std.npy')
         else:
             y_score = eval_model.predict(test_gen)
+            np.save(y_score, 'default_model_files/scores/test_val_scores/y_pred_test.npy')
+        np.save(y_true, 'default_model_files/scores/y_true_test.npy')
 
     try:
         roc_auc = roc_auc_score(y_true, y_score, average='weighted')
