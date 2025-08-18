@@ -47,6 +47,8 @@ class Config:
     LOG_DIR: str = os.path.abspath(os.getenv('LOG_DIR', './logs'))
     CXR_APP_LOG_DIR = os.path.join(LOG_DIR, 'logfiles', 'cxr_app')
     TRAIN_LOG_DIR = os.path.join(LOG_DIR, 'logfiles', 'train')
+    PERFORMANCE_ANALYSIS_DIR = os.path.join(LOG_DIR, 'logfiles', 'performance')
+    CALIBRATION_ANALYSIS_DIR = os.path.join(LOG_DIR, 'logfiles', 'calibration')
 
     # Model directory and model name
     MODEL_DIR: str = os.path.abspath(os.getenv('MODEL_DIR', './src/assets/models/'))
