@@ -135,7 +135,7 @@ class CheXpertDataset:
         Tuple[tf.Tensor, tf.Tensor]: The augmented image and label tensors.
         """
         image = tf.image.random_flip_left_right(image)
-        image = tf.image.random_flip_up_down(image)
+        # image = tf.image.random_flip_up_down(image)
         image = tf.image.random_brightness(image, max_delta=0.1)
         image = tf.image.random_contrast(image, lower=0.9, upper=1.1)
         return image, label
