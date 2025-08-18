@@ -2,6 +2,7 @@ import logging
 import os
 from typing import Optional, List, Dict
 
+import pandas as pd
 import tensorflow as tf
 from keras import Model as KerasModel
 from pandas import DataFrame as PandasDataFrame
@@ -20,7 +21,7 @@ class XRayTrainer:
     This class handles data loading, model building, training, and saving the model.
     """
 
-    def __init__(self,
+    def __init__(self, data_loader=None, train_df: pd.DataFrame = None,
                  parent_indices: List[int] = None, child_indices: List[List[int]] = None,
                  penalties: Optional[Dict[int, Dict[int, float]]] = None,
                  hierarchy_penalty: Optional[float] = None,
@@ -31,6 +32,8 @@ class XRayTrainer:
         Initialize the XRayTrainer.
 
         Parameters:
+        data_loader (Optional[TFDataLoader]): Data loader.
+        train_df (Optional[TFDataset]): Training dataset.
         parent_indices (List[int]): List of parent indices.
         child_indices (List[List[int]]): List of child indices.
         penalties (Optional[Dict[int, Dict[int, float]]]): Penalties for the hierarchical loss function.
@@ -42,7 +45,7 @@ class XRayTrainer:
         logger.info(f'Num GPUs Available: {len(tf.config.list_physical_devices("GPU"))}')
 
         super().__init__()
-        self.__data_loader = CheXpertDataLoader()
+        self.__data_loader = CheXpertDataLoader() if data_loader is None else data_loader
         self.__num_classes: int = self.__data_loader.get_num_classes()
         if parent_indices is None or child_indices is None:
             self.__parent_indices, self.__child_indices = self.__data_loader.get_parent_child_indices()
@@ -52,7 +55,7 @@ class XRayTrainer:
         if use_computed_penalties:
             self.__hierarchy_penalty = None
             if penalties is None:
-                self.__penalties = self.__data_loader.get_penalties()
+                self.__penalties = self.__data_loader.get_penalties(train_df)
             else:
                 self.__penalties = penalties
         else:

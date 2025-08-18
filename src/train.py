@@ -13,6 +13,11 @@ from src.helpers.logger_config import LoggerConfig, LoggingCallback
 from src.helpers.model_utils import ModelUtils
 from src.x_ray_trainer import XRayTrainer
 
+seed = 2408
+random.seed(seed)
+np.random.seed(seed)
+tf.random.set_seed(seed)
+
 
 def train(tr_hierarchy_penalty: Optional[float] = None,
           tr_penalty_scale: Optional[float] = None,
@@ -28,10 +33,6 @@ def train(tr_hierarchy_penalty: Optional[float] = None,
     Returns:
     Optional[keras.Model]: The trained Keras model, or None if an error occurs.
     """
-    seed = 2408
-    random.seed(seed)
-    np.random.seed(seed)
-    tf.random.set_seed(seed)
 
     try:
         xray_trainer = XRayTrainer(hierarchy_penalty=tr_hierarchy_penalty,
@@ -66,9 +67,64 @@ def train(tr_hierarchy_penalty: Optional[float] = None,
         return None, None
 
 
+def _freeze_batchnorm_inference(model):
+    """Make BatchNorm run in inference mode even when we pass training=True."""
+    for layer in model.layers:
+        if isinstance(layer, tf.keras.layers.BatchNormalization):
+            layer.trainable = False
+
+
+def _iter_once(gen):
+    """Yield batches from either a Keras Sequence, tf.data.Dataset, or plain generator."""
+    # Keras Sequence (has __len__ and __getitem__)
+    if hasattr(gen, '__len__') and hasattr(gen, '__getitem__'):
+        for i in range(len(gen)):
+            batch = gen[i]
+            yield batch if isinstance(batch, (tuple, list)) else (batch, None)
+    else:
+        # tf.data or Python generator
+        for batch in gen:
+            yield batch if isinstance(batch, (tuple, list)) else (batch, None)
+
+
+def predict_mcd(model, test_gen, passes=30, verbose=0):
+    """
+    Returns:
+      mean_probs: [N, L]  — mean probability over passes
+      std_probs:  [N, L]  — std-dev over passes
+      all_probs:  [T, N, L] (optional; returned for convenience)
+    Notes:
+      - Ensure test_gen has NO shuffle/repeat.
+      - BatchNorm is frozen to inference; Dropout is active (training=True).
+    """
+    _freeze_batchnorm_inference(model)
+
+    # Collect predictions for each pass
+    preds_list = []
+    for t in range(passes):
+        if verbose:
+            print(f"[MCD] pass {t + 1}/{passes}", end="\r")
+        batch_preds = []
+        for x, _ in _iter_once(test_gen):
+            # Activate dropout
+            y = model(x, training=True)
+            y = y.numpy() if hasattr(y, "numpy") else np.asarray(y)
+            # if from_logits:
+            #     y = 1.0 / (1.0 + np.exp(-y))  # sigmoid
+            batch_preds.append(y)
+        preds_t = np.concatenate(batch_preds, axis=0)  # [N, L]
+        preds_list.append(preds_t)
+
+    all_probs = np.stack(preds_list, axis=0)  # [T, N, L]
+    mean_probs = all_probs.mean(axis=0)  # [N, L]
+    std_probs = all_probs.std(axis=0)  # [N, L]
+    return mean_probs, std_probs, all_probs
+
+
 def evaluate(data_loader: Optional[CheXpertDataLoader] = None,
              eval_model: Optional[KerasModel] = None,
-             model_path: Optional[str] = None):
+             model_path: Optional[str] = None,
+             mode: str = 'test', is_mcd: bool = False) -> float:
     """
     Evaluate the X-ray model.
 
@@ -76,34 +132,58 @@ def evaluate(data_loader: Optional[CheXpertDataLoader] = None,
     data_loader (Optional[CheXpertDataLoader]): The CheXpert data loader.
     ev_model (Optional[keras.Model]): The model to evaluate. If None, a model will be loaded from model_path.
     model_path (Optional[str]): The path to the model to load. Ignored if ev_model is provided.
+    mode (str): Whether to evaluate on evaluation or test set.
+    is_mcd (bool): Whether the evaluation uses MCD or not.
     """
     if model_path:
-        ev_model = ModelUtils.load_model(model_path)
-    elif eval_model:
-        ev_model = eval_model
-    else:
+        eval_model = ModelUtils.load_model(model_path)
+    elif not eval_model:
         logger.error('No model provided for evaluation.')
-        return
+        return 0.0
 
     if not data_loader:
         data_loader = CheXpertDataLoader()
+
+    if mode == 'val':
+        _, val_df, _ = data_loader.get_data_frames()
+        _, val_gen, _ = data_loader.get_data_generators()
+        y_true = val_df[data_loader.get_unique_labels()].values
+        if is_mcd:
+            y_score, y_score_std, _ = predict_mcd(
+                eval_model,
+                val_gen,
+                passes=50,  # tweak as you like (30–100 common)
+                # from_logits=False,  # set True if your model outputs logits
+                verbose=1
+            )
+        else:
+            y_score = eval_model.predict(val_gen)
     else:
-        data_loader = data_loader
-
-    _, _, test_df = data_loader.get_data_frames()
-    _, _, test_gen = data_loader.get_data_generators()
-    unique_labels = data_loader.get_unique_labels()
-
-    y_score = ev_model.predict(test_gen)
+        _, _, test_df = data_loader.get_data_frames()
+        _, _, test_gen = data_loader.get_data_generators()
+        y_true = test_df[data_loader.get_unique_labels()].values
+        if is_mcd:
+            y_score, y_score_std, _ = predict_mcd(
+                eval_model,
+                test_gen,
+                passes=50,  # tweak as you like (30–100 common)
+                # from_logits=False,  # set True if your model outputs logits
+                verbose=1
+            )
+        else:
+            y_score = eval_model.predict(test_gen)
 
     try:
-        roc_auc = roc_auc_score(test_df[unique_labels].values, y_score, average='weighted')
+        roc_auc = roc_auc_score(y_true, y_score, average='weighted')
     except ValueError as e:
         roc_auc = 0.0
         logger.warning(f'AUROC calculation failed: {e}')
 
-    logger.info(f'AUROC for {eval_model.name}: {roc_auc:.4f}')
-    ModelUtils.get_roc_curve(unique_labels, y_score, test_df[unique_labels].values, roc_auc, ev_model.name)
+    logger.info(f'AUROC ({mode}) for {eval_model.name}: {roc_auc:.4f}')
+    if mode == 'test':
+        ModelUtils.get_roc_curve(data_loader.get_unique_labels(), y_score, y_true, roc_auc, eval_model.name)
+
+    return roc_auc
 
 
 if __name__ == '__main__':

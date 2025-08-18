@@ -338,6 +338,18 @@ class CheXpertDataLoader:
         """
         return self.__data_gen_dict['train'], self.__data_gen_dict['val'], self.__data_gen_dict['test']
 
+    def get_data_generator_for_df(self, df: pd.DataFrame,
+                                  shuffle=True, preprocess=True, augment=True) -> tf.data.Dataset:
+        data_gen = CheXpertDataset(df=df,
+                                   unique_labels=self.__unique_labels,
+                                   input_folders=self.__train_val_data_dirs,
+                                   batch_size=self.__batch_size,
+                                   shuffle=shuffle,
+                                   preprocess=preprocess,
+                                   augment=augment,
+                                   preprocess_unit=self.__preprocess_unit).get_dataset()
+        return data_gen
+
     def get_class_weights(self) -> Dict[str, Dict[int, float]]:
         """
         Get the class weights for the training data.
@@ -356,11 +368,13 @@ class CheXpertDataLoader:
         """
         return self.__parent_indices, self.__child_indices
 
-    def get_penalties(self) -> Dict[int, Dict[int, float]]:
+    def get_penalties(self, df: pd.DataFrame = None) -> Dict[int, Dict[int, float]]:
         """
         Get the computed penalties for the hierarchical loss function.
 
         Returns:
         Dict[int, Dict[int, float]]: Nested dictionary containing penalties for each parent-child pair.
         """
-        return self.__compute_penalties(self.__df_dict['train'], self.__parent_indices, self.__child_indices)
+        if df is None:
+            df = self.__df_dict['train']
+        return self.__compute_penalties(df, self.__parent_indices, self.__child_indices)
